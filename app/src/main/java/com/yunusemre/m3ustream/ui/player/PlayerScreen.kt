@@ -156,10 +156,10 @@ fun PlayerScreen(
         }
     }
 
-    // Video oynarken kontrolleri otomatik gizleme (5 saniye sonra)
+    // Video oynarken kontrolleri otomatik gizleme (8 saniye sonra)
     LaunchedEffect(uiState.isControlsVisible, uiState.isPlaying, uiState.showTrackSelector) {
         if (uiState.isControlsVisible && uiState.isPlaying && !uiState.showTrackSelector) {
-            delay(5000)
+            delay(8000)
             viewModel.setControlsVisible(false)
         }
     }
@@ -225,82 +225,124 @@ fun PlayerScreen(
         )
     }
 
-    val focusRequester = remember { FocusRequester() }
+    val rootFocusRequester = remember { FocusRequester() }
+    val playPauseFocusRequester = remember { FocusRequester() }
+
     LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
+        rootFocusRequester.requestFocus()
+    }
+
+    LaunchedEffect(uiState.isControlsVisible) {
+        if (uiState.isControlsVisible) {
+            delay(50)
+            try {
+                playPauseFocusRequester.requestFocus()
+            } catch (_: Exception) {}
+        } else {
+            delay(50)
+            try {
+                rootFocusRequester.requestFocus()
+            } catch (_: Exception) {}
+        }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .focusRequester(focusRequester)
+            .focusRequester(rootFocusRequester)
             .focusable()
             .onKeyEvent { keyEvent ->
                 if (keyEvent.type == KeyEventType.KeyDown) {
                     val code = keyEvent.nativeKeyEvent.keyCode
-                    when (code) {
-                        KeyEvent.KEYCODE_DPAD_CENTER,
-                        KeyEvent.KEYCODE_ENTER,
-                        KeyEvent.KEYCODE_NUMPAD_ENTER,
-                        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
-                            if (exoPlayer?.isPlaying == true) {
+
+                    // 1. Altyazı / Ses seçim paneli açıkken
+                    if (uiState.showTrackSelector) {
+                        if (code == KeyEvent.KEYCODE_BACK) {
+                            viewModel.setShowTrackSelector(false)
+                            return@onKeyEvent true
+                        }
+                        // Diğer yön tuşlarının panel içinde gezinmesine izin ver
+                        return@onKeyEvent false
+                    }
+
+                    // 2. Kontroller GÖRÜNÜR durumdayken
+                    if (uiState.isControlsVisible) {
+                        when (code) {
+                            KeyEvent.KEYCODE_BACK -> {
+                                viewModel.setControlsVisible(false)
+                                return@onKeyEvent true
+                            }
+                            KeyEvent.KEYCODE_MENU -> {
+                                viewModel.setShowTrackSelector(!uiState.showTrackSelector)
+                                return@onKeyEvent true
+                            }
+                            // D-Pad tuşlarını yutma! Compose odak sistemine bırakarak
+                            // Play/Pause, Rewind, Forward, ALTYAZI, SES, Hız butonları arasında serbestçe gezinilmesini sağla
+                            KeyEvent.KEYCODE_DPAD_UP,
+                            KeyEvent.KEYCODE_DPAD_DOWN,
+                            KeyEvent.KEYCODE_DPAD_LEFT,
+                            KeyEvent.KEYCODE_DPAD_RIGHT,
+                            KeyEvent.KEYCODE_DPAD_CENTER,
+                            KeyEvent.KEYCODE_ENTER,
+                            KeyEvent.KEYCODE_NUMPAD_ENTER -> {
+                                return@onKeyEvent false
+                            }
+                        }
+                    } else {
+                        // 3. Kontroller GİZLİ durumdayken (Tam ekran video oynarken)
+                        when (code) {
+                            KeyEvent.KEYCODE_DPAD_CENTER,
+                            KeyEvent.KEYCODE_ENTER,
+                            KeyEvent.KEYCODE_NUMPAD_ENTER,
+                            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
+                                if (exoPlayer?.isPlaying == true) {
+                                    exoPlayer?.pause()
+                                } else {
+                                    exoPlayer?.play()
+                                }
+                                viewModel.setControlsVisible(true)
+                                return@onKeyEvent true
+                            }
+                            KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                                exoPlayer?.play()
+                                return@onKeyEvent true
+                            }
+                            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
                                 exoPlayer?.pause()
                                 viewModel.setControlsVisible(true)
-                            } else {
-                                exoPlayer?.play()
-                                viewModel.setControlsVisible(false)
-                            }
-                            return@onKeyEvent true
-                        }
-                        KeyEvent.KEYCODE_MEDIA_PLAY -> {
-                            exoPlayer?.play()
-                            return@onKeyEvent true
-                        }
-                        KeyEvent.KEYCODE_MEDIA_PAUSE -> {
-                            exoPlayer?.pause()
-                            viewModel.setControlsVisible(true)
-                            return@onKeyEvent true
-                        }
-                        KeyEvent.KEYCODE_DPAD_LEFT,
-                        KeyEvent.KEYCODE_MEDIA_REWIND -> {
-                            exoPlayer?.let {
-                                val pos = (it.currentPosition - 10000).coerceAtLeast(0)
-                                it.seekTo(pos)
-                                viewModel.updatePlaybackState(it.isPlaying, pos, it.duration)
-                                viewModel.setControlsVisible(true)
-                            }
-                            return@onKeyEvent true
-                        }
-                        KeyEvent.KEYCODE_DPAD_RIGHT,
-                        KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
-                            exoPlayer?.let {
-                                val pos = (it.currentPosition + 10000).coerceAtMost(it.duration)
-                                it.seekTo(pos)
-                                viewModel.updatePlaybackState(it.isPlaying, pos, it.duration)
-                                viewModel.setControlsVisible(true)
-                            }
-                            return@onKeyEvent true
-                        }
-                        KeyEvent.KEYCODE_DPAD_UP,
-                        KeyEvent.KEYCODE_DPAD_DOWN -> {
-                            viewModel.toggleControls()
-                            return@onKeyEvent true
-                        }
-                        KeyEvent.KEYCODE_MENU -> {
-                            viewModel.setShowTrackSelector(!uiState.showTrackSelector)
-                            return@onKeyEvent true
-                        }
-                        KeyEvent.KEYCODE_BACK -> {
-                            if (uiState.showTrackSelector) {
-                                viewModel.setShowTrackSelector(false)
                                 return@onKeyEvent true
                             }
-                            if (uiState.isControlsVisible) {
-                                viewModel.setControlsVisible(false)
+                            KeyEvent.KEYCODE_DPAD_LEFT,
+                            KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                                exoPlayer?.let {
+                                    val pos = (it.currentPosition - 10000).coerceAtLeast(0)
+                                    it.seekTo(pos)
+                                    viewModel.updatePlaybackState(it.isPlaying, pos, it.duration)
+                                }
                                 return@onKeyEvent true
                             }
-                            onNavigateUp()
-                            return@onKeyEvent true
+                            KeyEvent.KEYCODE_DPAD_RIGHT,
+                            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+                                exoPlayer?.let {
+                                    val pos = (it.currentPosition + 10000).coerceAtMost(it.duration)
+                                    it.seekTo(pos)
+                                    viewModel.updatePlaybackState(it.isPlaying, pos, it.duration)
+                                }
+                                return@onKeyEvent true
+                            }
+                            KeyEvent.KEYCODE_DPAD_UP,
+                            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                viewModel.setControlsVisible(true)
+                                return@onKeyEvent true
+                            }
+                            KeyEvent.KEYCODE_MENU -> {
+                                viewModel.setShowTrackSelector(!uiState.showTrackSelector)
+                                return@onKeyEvent true
+                            }
+                            KeyEvent.KEYCODE_BACK -> {
+                                onNavigateUp()
+                                return@onKeyEvent true
+                            }
                         }
                     }
                 }
@@ -404,7 +446,8 @@ fun PlayerScreen(
             onLockClick = { viewModel.toggleLock() },
             onNextEpisodeClick = if (uiState.nextEpisode != null) {
                 { viewModel.loadContent(uiState.nextEpisode!!.id) }
-            } else null
+            } else null,
+            playPauseFocusRequester = playPauseFocusRequester
         )
 
         if (uiState.isLoading && !uiState.isPlaying) {
