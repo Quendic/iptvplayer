@@ -226,19 +226,13 @@ fun PlayerScreen(
     }
 
     val rootFocusRequester = remember { FocusRequester() }
-    val playPauseFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
         rootFocusRequester.requestFocus()
     }
 
     LaunchedEffect(uiState.isControlsVisible) {
-        if (uiState.isControlsVisible) {
-            delay(50)
-            try {
-                playPauseFocusRequester.requestFocus()
-            } catch (_: Exception) {}
-        } else {
+        if (!uiState.isControlsVisible) {
             delay(50)
             try {
                 rootFocusRequester.requestFocus()
@@ -446,8 +440,7 @@ fun PlayerScreen(
             onLockClick = { viewModel.toggleLock() },
             onNextEpisodeClick = if (uiState.nextEpisode != null) {
                 { viewModel.loadContent(uiState.nextEpisode!!.id) }
-            } else null,
-            playPauseFocusRequester = playPauseFocusRequester
+            } else null
         )
 
         if (uiState.isLoading && !uiState.isPlaying) {

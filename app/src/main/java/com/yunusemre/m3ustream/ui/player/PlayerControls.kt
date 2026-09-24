@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yunusemre.m3ustream.ui.components.TvIconButton
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 @Composable
@@ -51,9 +52,29 @@ fun PlayerControls(
     onSpeedClick: () -> Unit,
     onLockClick: () -> Unit,
     onNextEpisodeClick: (() -> Unit)? = null,
-    playPauseFocusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier
 ) {
+    // D-Pad gezinimi için net odak referansları
+    val playPauseFocusRequester = remember { FocusRequester() }
+    val rewindFocusRequester = remember { FocusRequester() }
+    val forwardFocusRequester = remember { FocusRequester() }
+    val backFocusRequester = remember { FocusRequester() }
+    val lockFocusRequester = remember { FocusRequester() }
+    val altyaziFocusRequester = remember { FocusRequester() }
+    val sesFocusRequester = remember { FocusRequester() }
+    val speedFocusRequester = remember { FocusRequester() }
+    val nextEpisodeFocusRequester = remember { FocusRequester() }
+
+    // Kontroller açıldığında odağı KESİNLİKLE Oynat/Duraklat butonuna ver (Asla Geri butonuna gitmesin!)
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            delay(50)
+            try { playPauseFocusRequester.requestFocus() } catch (_: Exception) {}
+            delay(100)
+            try { playPauseFocusRequester.requestFocus() } catch (_: Exception) {}
+        }
+    }
+
     AnimatedVisibility(
         visible = isVisible,
         enter = fadeIn(),
@@ -78,133 +99,199 @@ fun PlayerControls(
                     )
                 }
             } else {
-                // Top Bar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter)
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TvIconButton(
-                        onClick = onBackClick,
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = title,
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
-                    )
-                }
-
-                // Center Controls (Rewind, Play/Pause, Forward)
-                Row(
-                    modifier = Modifier.align(Alignment.Center),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(36.dp)
-                ) {
-                    TvTextButton(
-                        text = "-10s",
-                        onClick = onRewind
-                    )
-
-                    TvPlayPauseButton(
-                        isPlaying = isPlaying,
-                        onClick = onPlayPause,
-                        focusRequester = playPauseFocusRequester
-                    )
-
-                    TvTextButton(
-                        text = "+10s",
-                        onClick = onForward
-                    )
-                }
-
-                // Bottom Controls (Slider & Action Buttons)
+                // Tek bir dikey sütun (Column): Odak sisteminin dikey hiyerarşiyi eksiksiz kavramasını sağlar
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 24.dp, vertical = 20.dp)
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Timeline Slider (touch only, D-Pad skips to avoid trapping navigation)
+                    // 1. ÜST BAR (Geri butonu ve Başlık)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = formatTime(currentPosition),
-                            color = Color.White.copy(alpha = 0.9f),
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        Slider(
-                            value = currentPosition.toFloat(),
-                            onValueChange = { onSeek(it.toLong()) },
-                            valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
+                        TvIconButton(
+                            onClick = onBackClick,
+                            icon = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
                             modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 10.dp)
-                                .focusProperties { canFocus = false },
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color(0xFFE50914),
-                                activeTrackColor = Color(0xFFE50914),
-                                inactiveTrackColor = Color.White.copy(alpha = 0.3f)
-                            )
+                                .focusRequester(backFocusRequester)
+                                .focusProperties {
+                                    down = playPauseFocusRequester
+                                    right = playPauseFocusRequester
+                                }
                         )
+                        Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = formatTime(duration),
-                            color = Color.White.copy(alpha = 0.9f),
-                            style = MaterialTheme.typography.labelMedium
+                            text = title,
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Bottom Action Row
+                    // 2. ORTA KONTROLLER (Geri Sar, Oynat/Duraklat, İleri Sar)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        TvTextButton(
+                            text = "-10s",
+                            onClick = onRewind,
+                            modifier = Modifier
+                                .focusRequester(rewindFocusRequester)
+                                .focusProperties {
+                                    up = backFocusRequester
+                                    right = playPauseFocusRequester
+                                    down = altyaziFocusRequester
+                                }
+                        )
+
+                        Spacer(modifier = Modifier.width(36.dp))
+
+                        TvPlayPauseButton(
+                            isPlaying = isPlaying,
+                            onClick = onPlayPause,
+                            modifier = Modifier
+                                .focusRequester(playPauseFocusRequester)
+                                .focusProperties {
+                                    up = backFocusRequester
+                                    left = rewindFocusRequester
+                                    right = forwardFocusRequester
+                                    down = altyaziFocusRequester
+                                }
+                        )
+
+                        Spacer(modifier = Modifier.width(36.dp))
+
+                        TvTextButton(
+                            text = "+10s",
+                            onClick = onForward,
+                            modifier = Modifier
+                                .focusRequester(forwardFocusRequester)
+                                .focusProperties {
+                                    up = backFocusRequester
+                                    left = playPauseFocusRequester
+                                    down = sesFocusRequester
+                                }
+                        )
+                    }
+
+                    // 3. ALT KONTROLLER (Süre Çubuğu, ALTYAZI, SES, Hız, Sonraki Bölüm)
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Süre Çubuğu (Kumandanın odak tuzağına düşmemesi için focus almaz, dokunmatik çalışır)
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            TvIconButton(
-                                onClick = onLockClick,
-                                icon = Icons.Default.LockOpen,
-                                contentDescription = "Lock",
-                                containerSize = 40.dp,
-                                iconSize = 22.dp
+                            Text(
+                                text = formatTime(currentPosition),
+                                color = Color.White.copy(alpha = 0.9f),
+                                style = MaterialTheme.typography.labelMedium
                             )
-
-                            TvTextButton(
-                                text = "ALTYAZI",
-                                icon = Icons.Default.Subtitles,
-                                onClick = onSubtitleClick
+                            Slider(
+                                value = currentPosition.toFloat(),
+                                onValueChange = { onSeek(it.toLong()) },
+                                valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 10.dp)
+                                    .focusProperties { canFocus = false },
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Color(0xFFE50914),
+                                    activeTrackColor = Color(0xFFE50914),
+                                    inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                                )
                             )
-
-                            TvTextButton(
-                                text = "SES",
-                                icon = Icons.Default.Audiotrack,
-                                onClick = onAudioClick
-                            )
-
-                            TvTextButton(
-                                text = "${playbackSpeed}x",
-                                icon = Icons.Default.Speed,
-                                onClick = onSpeedClick
+                            Text(
+                                text = formatTime(duration),
+                                color = Color.White.copy(alpha = 0.9f),
+                                style = MaterialTheme.typography.labelMedium
                             )
                         }
 
-                        if (onNextEpisodeClick != null) {
-                            TvNextEpisodeButton(
-                                onClick = onNextEpisodeClick
-                            )
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Alt Buton Satırı (ALTYAZI, SES vb.)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                TvIconButton(
+                                    onClick = onLockClick,
+                                    icon = Icons.Default.LockOpen,
+                                    contentDescription = "Lock",
+                                    containerSize = 40.dp,
+                                    iconSize = 22.dp,
+                                    modifier = Modifier
+                                        .focusRequester(lockFocusRequester)
+                                        .focusProperties {
+                                            up = rewindFocusRequester
+                                            right = altyaziFocusRequester
+                                        }
+                                )
+
+                                TvTextButton(
+                                    text = "ALTYAZI",
+                                    icon = Icons.Default.Subtitles,
+                                    onClick = onSubtitleClick,
+                                    modifier = Modifier
+                                        .focusRequester(altyaziFocusRequester)
+                                        .focusProperties {
+                                            up = playPauseFocusRequester
+                                            left = lockFocusRequester
+                                            right = sesFocusRequester
+                                        }
+                                )
+
+                                TvTextButton(
+                                    text = "SES",
+                                    icon = Icons.Default.Audiotrack,
+                                    onClick = onAudioClick,
+                                    modifier = Modifier
+                                        .focusRequester(sesFocusRequester)
+                                        .focusProperties {
+                                            up = playPauseFocusRequester
+                                            left = altyaziFocusRequester
+                                            right = speedFocusRequester
+                                        }
+                                )
+
+                                TvTextButton(
+                                    text = "${playbackSpeed}x",
+                                    icon = Icons.Default.Speed,
+                                    onClick = onSpeedClick,
+                                    modifier = Modifier
+                                        .focusRequester(speedFocusRequester)
+                                        .focusProperties {
+                                            up = forwardFocusRequester
+                                            left = sesFocusRequester
+                                            right = if (onNextEpisodeClick != null) nextEpisodeFocusRequester else FocusRequester.Default
+                                        }
+                                )
+                            }
+
+                            if (onNextEpisodeClick != null) {
+                                TvNextEpisodeButton(
+                                    onClick = onNextEpisodeClick,
+                                    modifier = Modifier
+                                        .focusRequester(nextEpisodeFocusRequester)
+                                        .focusProperties {
+                                            up = forwardFocusRequester
+                                            left = speedFocusRequester
+                                        }
+                                )
+                            }
                         }
                     }
                 }
@@ -222,8 +309,7 @@ fun TvTextButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
-    focusRequester: FocusRequester? = null
+    icon: ImageVector? = null
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
@@ -238,22 +324,16 @@ fun TvTextButton(
         label = "tv_text_btn_scale"
     )
 
-    var mod = modifier
-        .scale(scale)
-        .onFocusChanged { isFocused = it.isFocused }
-        .clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = null,
-            onClick = onClick
-        )
-        .focusable()
-
-    if (focusRequester != null) {
-        mod = mod.focusRequester(focusRequester)
-    }
-
     Surface(
-        modifier = mod,
+        modifier = modifier
+            .scale(scale)
+            .onFocusChanged { isFocused = it.isFocused }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .focusable(),
         color = if (isFocused) Color(0xFFE50914).copy(alpha = 0.16f) else Color.White.copy(alpha = 0.08f),
         shape = RoundedCornerShape(8.dp)
     ) {
@@ -287,8 +367,7 @@ fun TvTextButton(
 fun TvPlayPauseButton(
     isPlaying: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    focusRequester: FocusRequester? = null
+    modifier: Modifier = Modifier
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
@@ -303,23 +382,17 @@ fun TvPlayPauseButton(
         label = "tv_play_scale"
     )
 
-    var mod = modifier
-        .size(68.dp)
-        .scale(scale)
-        .onFocusChanged { isFocused = it.isFocused }
-        .clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = null,
-            onClick = onClick
-        )
-        .focusable()
-
-    if (focusRequester != null) {
-        mod = mod.focusRequester(focusRequester)
-    }
-
     Box(
-        modifier = mod,
+        modifier = modifier
+            .size(68.dp)
+            .scale(scale)
+            .onFocusChanged { isFocused = it.isFocused }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .focusable(),
         contentAlignment = Alignment.Center
     ) {
         Icon(
