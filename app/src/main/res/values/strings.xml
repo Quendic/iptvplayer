@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IPTV Player</string>
+    <string name="continue_watching">İzlemeye Devam Et</string>
+    <string name="search_hint">Film veya dizi ara...</string>
+    <string name="settings">Ayarlar</string>
+    <string name="favorites">Listem</string>
+    <string name="home">Ana Sayfa</string>
+    <string name="search">Ara</string>
+    <string name="play">Oynat</string>
+    <string name="resume">Kaldığın Yerden</string>
+    <string name="season_format">%d. Sezon</string>
+    <string name="episode_format">%d. Bölüm</string>
+    <string name="watched">İzlendi</string>
+    <string name="no_content">Henüz içerik eklenmedi</string>
+    <string name="import_m3u">M3U Listesini İçe Aktar</string>
+    <string name="enter_url">M3U URL\'sini girin</string>
+    <string name="select_file">Dosya Seç</string>
+    <string name="save_and_import">Kaydet ve İçe Aktar</string>
+    <string name="refresh_list">Listeyi Güncelle</string>
+    <string name="clear_data">Verileri Temizle</string>
+    <string name="audio_track">Ses İzi</string>
+    <string name="subtitle_track">Altyazı</string>
+    <string name="subtitle_off">Kapalı</string>
+    <string name="total_movies">Toplam Film</string>
+    <string name="total_series">Toplam Dizi</string>
+    <string name="last_updated">Son Güncelleme</string>
+    <string name="loading">Yükleniyor...</string>
+    <string name="see_all">Tümünü Gör</string>
+    <string name="next_episode">Sonraki Bölüm</string>
+    <string name="voice_search">Sesli Arama</string>
+    <string name="voice_search_prompt">Film veya dizi adı söyleyin...</string>
+    <string name="voice_search_not_supported">Cihazınızda ses tanıma servisi bulunamadı</string>
+</resources>

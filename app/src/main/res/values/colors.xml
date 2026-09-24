@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="netflix_background">#0F1218</color>
+    <color name="netflix_surface">#1A1D24</color>
+    <color name="netflix_surface_variant">#252830</color>
+    <color name="netflix_red">#E50914</color>
+    <color name="netflix_red_variant">#B81D24</color>
+    <color name="netflix_tertiary">#221F1F</color>
+
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#E5E5E5</color>
+    <color name="text_tertiary">#A0A0A0</color>
+
+    <color name="ic_launcher_background">#0F1218</color>
+</resources>
