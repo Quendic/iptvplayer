@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -200,68 +203,67 @@ fun PlayerControls(
                                 style = MaterialTheme.typography.labelMedium
                             )
 
-                            if (isTv) {
-                                BoxWithConstraints(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(24.dp)
-                                        .padding(horizontal = 10.dp)
-                                ) {
-                                    val barWidth = maxWidth
-                                    val thumbXOffset = barWidth * progress
-
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        // Bar konteyneri
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(4.dp)
-                                                .background(Color.White.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
-                                        ) {
-                                            // Aktif dolum kısmı
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxHeight()
-                                                    .fillMaxWidth(progress)
-                                                    .background(Color(0xFFE50914), RoundedCornerShape(2.dp))
-                                            )
-                                        }
-
-                                        // Halka (Thumb) - Netflix/YouTube tarzı
-                                        Box(
-                                            modifier = Modifier
-                                                .offset(x = thumbXOffset - 8.dp) // Halkanın yarıçapı kadar sola çek
-                                                .size(16.dp)
-                                                .border(2.dp, Color(0xFFE50914), CircleShape)
-                                                .background(Color.Transparent, CircleShape),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(6.dp)
-                                                    .background(Color(0xFFE50914), CircleShape)
-                                            )
+                            BoxWithConstraints(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(24.dp)
+                                    .padding(horizontal = 10.dp)
+                                    .pointerInput(duration) {
+                                        if (!isTv && duration > 0) {
+                                            detectTapGestures { offset ->
+                                                val percent = (offset.x / size.width.toFloat()).coerceIn(0f, 1f)
+                                                onSeek((percent * duration).toLong())
+                                            }
                                         }
                                     }
+                                    .pointerInput(duration) {
+                                        if (!isTv && duration > 0) {
+                                            detectDragGestures { change, _ ->
+                                                val percent = (change.position.x / size.width.toFloat()).coerceIn(0f, 1f)
+                                                onSeek((percent * duration).toLong())
+                                            }
+                                        }
+                                    }
+                            ) {
+                                val barWidth = maxWidth
+                                val thumbXOffset = barWidth * progress
+
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    // Bar konteyneri
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(4.dp)
+                                            .background(Color.White.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
+                                    ) {
+                                        // Aktif dolum kısmı
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxHeight()
+                                                .fillMaxWidth(progress)
+                                                .background(Color(0xFFE50914), RoundedCornerShape(2.dp))
+                                        )
+                                    }
+
+                                    // Halka (Thumb) - Netflix/YouTube tarzı
+                                    Box(
+                                        modifier = Modifier
+                                            .offset(x = thumbXOffset - 8.dp) // Halkanın yarıçapı kadar sola çek
+                                            .size(16.dp)
+                                            .border(2.dp, Color(0xFFE50914), CircleShape)
+                                            .background(Color.Transparent, CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .background(Color(0xFFE50914), CircleShape)
+                                        )
+                                    }
                                 }
-                            } else {
-                                Slider(
-                                    value = currentPosition.toFloat(),
-                                    onValueChange = { onSeek(it.toLong()) },
-                                    valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 10.dp)
-                                        .focusProperties { canFocus = false },
-                                    colors = SliderDefaults.colors(
-                                        thumbColor = Color(0xFFE50914),
-                                        activeTrackColor = Color(0xFFE50914),
-                                        inactiveTrackColor = Color.White.copy(alpha = 0.3f)
-                                    )
-                                )
                             }
 
                             Text(
