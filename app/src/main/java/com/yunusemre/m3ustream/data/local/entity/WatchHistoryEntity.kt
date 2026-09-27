@@ -2,10 +2,12 @@ package com.yunusemre.m3ustream.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "watch_history",
+    indices = [Index(value = ["lastWatchedAt"])],
     foreignKeys = [
         ForeignKey(
             entity = ContentEntity::class,

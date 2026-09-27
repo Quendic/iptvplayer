@@ -40,8 +40,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -89,8 +89,12 @@ fun SeriesDetailScreen(
                     .height(300.dp)
             ) {
                 AsyncImage(
-                    model = series.posterUrl,
+                    model = coil3.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                        .data(series.posterUrl)
+                        .size(800)
+                        .build(),
                     contentDescription = series.name,
+                    placeholder = androidx.compose.ui.graphics.painter.ColorPainter(Color.DarkGray),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -153,7 +157,7 @@ fun SeriesDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
                 ) {
-                    items(series.seasons) { season ->
+                    items(series.seasons, key = { it.number }) { season ->
                         val isSelected = season.number == state.selectedSeason?.number
                         var isTabFocused by remember { mutableStateOf(false) }
                         val textColor by animateColorAsState(
@@ -168,7 +172,10 @@ fun SeriesDetailScreen(
                         )
                         Surface(
                             modifier = Modifier
-                                .scale(tabScale)
+                                .graphicsLayer {
+                                    scaleX = tabScale
+                                    scaleY = tabScale
+                                }
                                 .onFocusChanged { isTabFocused = it.isFocused }
                                 .clickable { viewModel.selectSeason(season) }
                                 .focusable(),
@@ -188,7 +195,7 @@ fun SeriesDetailScreen(
         }
 
         state.selectedSeason?.let { season ->
-            items(season.episodes) { episode ->
+            items(season.episodes, key = { it.id }) { episode ->
                 EpisodeListItem(
                     episode = episode,
                     progress = state.progressMap[episode.id],

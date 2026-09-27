@@ -1,5 +1,8 @@
 package com.yunusemre.m3ustream.domain.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class WatchProgress(
     val contentId: String,
     val lastPosition: Long,

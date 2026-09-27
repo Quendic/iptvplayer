@@ -68,8 +68,12 @@ fun ContentCard(
                 )
             } else {
                 AsyncImage(
-                    model = posterUrl,
+                    model = coil3.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                        .data(posterUrl)
+                        .size(400)
+                        .build(),
                     contentDescription = title,
+                    placeholder = androidx.compose.ui.graphics.painter.ColorPainter(Color.DarkGray),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )

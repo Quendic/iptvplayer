@@ -47,10 +47,6 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadData()
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -163,7 +159,7 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp)
                         ) {
-                            items(uiState.continueWatching) { content ->
+                            items(uiState.continueWatching, key = { it.id }) { content ->
                                 Column(
                                     modifier = Modifier
                                         .width(135.dp)

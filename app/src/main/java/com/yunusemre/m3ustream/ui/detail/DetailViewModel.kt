@@ -18,8 +18,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.Immutable
 import javax.inject.Inject
 
+@Immutable
 data class MovieDetailState(
     val content: Content? = null,
     val progress: WatchProgress? = null,
@@ -28,6 +30,7 @@ data class MovieDetailState(
     val error: String? = null
 )
 
+@Immutable
 data class SeriesDetailState(
     val series: Series? = null,
     val selectedSeason: Season? = null,

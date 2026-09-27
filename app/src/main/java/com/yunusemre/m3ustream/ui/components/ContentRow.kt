@@ -59,7 +59,7 @@ fun ContentRow(
             contentPadding = PaddingValues(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(contents) { content ->
+            items(contents, key = { it.id }) { content ->
                 ContentCard(
                     title = content.title,
                     posterUrl = content.posterUrl,

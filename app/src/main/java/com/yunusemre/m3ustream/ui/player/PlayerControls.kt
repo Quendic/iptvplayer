@@ -20,7 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -68,8 +68,6 @@ fun PlayerControls(
     // Kontroller açıldığında odağı KESİNLİKLE Oynat/Duraklat butonuna ver (Asla Geri butonuna gitmesin!)
     LaunchedEffect(isVisible) {
         if (isVisible) {
-            delay(50)
-            try { playPauseFocusRequester.requestFocus() } catch (_: Exception) {}
             delay(100)
             try { playPauseFocusRequester.requestFocus() } catch (_: Exception) {}
         }
@@ -194,20 +192,37 @@ fun PlayerControls(
                                 color = Color.White.copy(alpha = 0.9f),
                                 style = MaterialTheme.typography.labelMedium
                             )
-                            Slider(
-                                value = currentPosition.toFloat(),
-                                onValueChange = { onSeek(it.toLong()) },
-                                valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(horizontal = 10.dp)
-                                    .focusProperties { canFocus = false },
-                                colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFFE50914),
-                                    activeTrackColor = Color(0xFFE50914),
-                                    inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                            val progress = if (duration > 0) (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f
+                            val context = androidx.compose.ui.platform.LocalContext.current
+                            val uiModeManager = remember { context.getSystemService(android.content.Context.UI_MODE_SERVICE) as android.app.UiModeManager }
+                            val isTv = remember { uiModeManager.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION }
+                            
+                            if (isTv) {
+                                LinearProgressIndicator(
+                                    progress = { progress },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(4.dp)
+                                        .padding(horizontal = 10.dp),
+                                    color = Color(0xFFE50914),
+                                    trackColor = Color.White.copy(alpha = 0.3f)
                                 )
-                            )
+                            } else {
+                                Slider(
+                                    value = currentPosition.toFloat(),
+                                    onValueChange = { onSeek(it.toLong()) },
+                                    valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(horizontal = 10.dp)
+                                        .focusProperties { canFocus = false },
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFFE50914),
+                                        activeTrackColor = Color(0xFFE50914),
+                                        inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                                    )
+                                )
+                            }
                             Text(
                                 text = formatTime(duration),
                                 color = Color.White.copy(alpha = 0.9f),
@@ -326,14 +341,14 @@ fun TvTextButton(
 
     Surface(
         modifier = modifier
-            .scale(scale)
             .onFocusChanged { isFocused = it.isFocused }
+            .focusable()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick
-            )
-            .focusable(),
+            ),
         color = if (isFocused) Color(0xFFE50914).copy(alpha = 0.16f) else Color.White.copy(alpha = 0.08f),
         shape = RoundedCornerShape(8.dp)
     ) {
@@ -385,14 +400,14 @@ fun TvPlayPauseButton(
     Box(
         modifier = modifier
             .size(68.dp)
-            .scale(scale)
             .onFocusChanged { isFocused = it.isFocused }
+            .focusable()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick
-            )
-            .focusable(),
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -427,14 +442,14 @@ fun TvNextEpisodeButton(
 
     Surface(
         modifier = modifier
-            .scale(scale)
             .onFocusChanged { isFocused = it.isFocused }
+            .focusable()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick
-            )
-            .focusable(),
+            ),
         color = if (isFocused) Color(0xFFE50914).copy(alpha = 0.18f) else Color(0xFFE50914),
         shape = RoundedCornerShape(8.dp)
     ) {

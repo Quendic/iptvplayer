@@ -13,11 +13,7 @@ class M3uParser @Inject constructor() {
         var name = ""
         var duration = ""
 
-        val extInfRegex = Regex("""#EXTINF:([^,]*),(.*)""")
-        val tvgIdRegex = Regex("""tvg-id="([^"]*)"""")
-        val tvgNameRegex = Regex("""tvg-name="([^"]*)"""")
-        val tvgLogoRegex = Regex("""tvg-logo="([^"]*)"""")
-        val groupTitleRegex = Regex("""group-title="([^"]*)"""")
+
 
         inputStream.bufferedReader().useLines { lines ->
             for (line in lines) {
@@ -30,12 +26,12 @@ class M3uParser @Inject constructor() {
                         val attrs = trimmed.substring(8, commaIndex)
                         name = trimmed.substring(commaIndex + 1).trim()
                         
-                        tvgId = tvgIdRegex.find(attrs)?.groupValues?.get(1) ?: ""
-                        tvgName = tvgNameRegex.find(attrs)?.groupValues?.get(1) ?: ""
-                        tvgLogo = tvgLogoRegex.find(attrs)?.groupValues?.get(1) ?: ""
-                        groupTitle = groupTitleRegex.find(attrs)?.groupValues?.get(1) ?: ""
+                        tvgId = TVG_ID_REGEX.find(attrs)?.groupValues?.get(1) ?: ""
+                        tvgName = TVG_NAME_REGEX.find(attrs)?.groupValues?.get(1) ?: ""
+                        tvgLogo = TVG_LOGO_REGEX.find(attrs)?.groupValues?.get(1) ?: ""
+                        groupTitle = GROUP_TITLE_REGEX.find(attrs)?.groupValues?.get(1) ?: ""
                         
-                        val durMatch = Regex("""^#EXTINF:([-0-9]+)""").find(trimmed)
+                        val durMatch = DUR_REGEX.find(trimmed)
                         duration = durMatch?.groupValues?.get(1) ?: "-1"
                         
                         if (name.isEmpty() && tvgName.isNotEmpty()) {
@@ -67,5 +63,14 @@ class M3uParser @Inject constructor() {
             }
         }
         return items
+    }
+
+    companion object {
+        private val EXT_INF_REGEX = Regex("""#EXTINF:([^,]*),(.*)""")
+        private val TVG_ID_REGEX = Regex("""tvg-id="([^"]*)"""")
+        private val TVG_NAME_REGEX = Regex("""tvg-name="([^"]*)"""")
+        private val TVG_LOGO_REGEX = Regex("""tvg-logo="([^"]*)"""")
+        private val GROUP_TITLE_REGEX = Regex("""group-title="([^"]*)"""")
+        private val DUR_REGEX = Regex("""^#EXTINF:([-0-9]+)""")
     }
 }

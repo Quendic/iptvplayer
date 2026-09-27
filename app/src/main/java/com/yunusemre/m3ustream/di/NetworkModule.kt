@@ -24,8 +24,13 @@ object NetworkModule {
                 json(Json {
                     ignoreUnknownKeys = true
                     isLenient = true
-                    prettyPrint = true
+                    prettyPrint = false
                 })
+            }
+            install(io.ktor.client.plugins.HttpTimeout) {
+                requestTimeoutMillis = 30_000
+                connectTimeoutMillis = 15_000
+                socketTimeoutMillis = 15_000
             }
         }
     }

@@ -36,8 +36,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -83,8 +83,12 @@ fun MovieDetailScreen(
                 .height(400.dp)
         ) {
             AsyncImage(
-                model = content.posterUrl,
+                model = coil3.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                    .data(content.posterUrl)
+                    .size(800)
+                    .build(),
                 contentDescription = content.title,
+                placeholder = androidx.compose.ui.graphics.painter.ColorPainter(Color.DarkGray),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
@@ -147,7 +151,10 @@ fun MovieDetailScreen(
                     onClick = { navController.navigate(Screen.Player.createRoute(content.id)) },
                     modifier = Modifier
                         .weight(1f)
-                        .scale(playScale)
+                        .graphicsLayer { 
+                            scaleX = playScale
+                            scaleY = playScale
+                        }
                         .onFocusChanged { isPlayFocused = it.isFocused }
                         .focusable(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -178,7 +185,10 @@ fun MovieDetailScreen(
                 Surface(
                     modifier = Modifier
                         .weight(1f)
-                        .scale(favScale)
+                        .graphicsLayer {
+                            scaleX = favScale
+                            scaleY = favScale
+                        }
                         .onFocusChanged { isFavFocused = it.isFocused }
                         .clickable { viewModel.toggleMovieFavorite() }
                         .focusable(),

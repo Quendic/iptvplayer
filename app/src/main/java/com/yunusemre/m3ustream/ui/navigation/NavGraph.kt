@@ -32,7 +32,16 @@ import com.yunusemre.m3ustream.ui.home.HomeScreen
 import com.yunusemre.m3ustream.ui.player.PlayerScreen
 import com.yunusemre.m3ustream.ui.search.SearchScreen
 import com.yunusemre.m3ustream.ui.settings.SettingsScreen
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import com.yunusemre.m3ustream.ui.favorites.FavoritesScreen
+
+private val BOTTOM_NAV_ITEMS = listOf(
+    Screen.Home to Pair(R.string.home, Icons.Filled.Home),
+    Screen.Search to Pair(R.string.search, Icons.Filled.Search),
+    Screen.Favorites to Pair(R.string.favorites, Icons.Filled.Favorite),
+    Screen.Settings to Pair(R.string.settings, Icons.Filled.Settings)
+)
 
 @Composable
 fun NavGraph() {
@@ -51,14 +60,7 @@ fun NavGraph() {
 
             if (isBottomNavVisible) {
                 NavigationBar {
-                    val items = listOf(
-                        Screen.Home to Pair(R.string.home, Icons.Filled.Home),
-                        Screen.Search to Pair(R.string.search, Icons.Filled.Search),
-                        Screen.Favorites to Pair(R.string.favorites, Icons.Filled.Favorite),
-                        Screen.Settings to Pair(R.string.settings, Icons.Filled.Settings)
-                    )
-
-                    items.forEach { (screen, info) ->
+                    BOTTOM_NAV_ITEMS.forEach { (screen, info) ->
                         NavigationBarItem(
                             icon = { Icon(info.second, contentDescription = stringResource(info.first)) },
                             label = { Text(stringResource(info.first)) },
@@ -107,16 +109,20 @@ fun NavGraph() {
             composable(
                 route = Screen.MovieDetail.route,
                 arguments = listOf(navArgument("contentId") { type = NavType.StringType }),
-                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300)) },
-                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)) }
+                enterTransition = { fadeIn(animationSpec = tween(200)) },
+                exitTransition = { fadeOut(animationSpec = tween(200)) },
+                popEnterTransition = { fadeIn(animationSpec = tween(200)) },
+                popExitTransition = { fadeOut(animationSpec = tween(200)) }
             ) {
                 MovieDetailScreen(navController = navController)
             }
             composable(
                 route = Screen.SeriesDetail.route,
                 arguments = listOf(navArgument("seriesName") { type = NavType.StringType }),
-                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300)) },
-                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)) }
+                enterTransition = { fadeIn(animationSpec = tween(200)) },
+                exitTransition = { fadeOut(animationSpec = tween(200)) },
+                popEnterTransition = { fadeIn(animationSpec = tween(200)) },
+                popExitTransition = { fadeOut(animationSpec = tween(200)) }
             ) {
                 SeriesDetailScreen(navController = navController)
             }

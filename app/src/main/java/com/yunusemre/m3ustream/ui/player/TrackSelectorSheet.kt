@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -34,10 +35,13 @@ fun TrackSelectorSheet(
     onSubtitleSizeDecrease: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        containerColor = MaterialTheme.colorScheme.surface
-    ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isTv = remember(context) {
+        val uiModeManager = context.getSystemService(android.content.Context.UI_MODE_SERVICE) as? android.app.UiModeManager
+        uiModeManager?.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
+    }
+
+    val sheetContent = @Composable {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -63,7 +67,7 @@ fun TrackSelectorSheet(
                     )
                 }
             } else {
-                items(audioTracks) { track ->
+                items(audioTracks, key = { "audio_${it.groupIndex}_${it.trackIndex}" }) { track ->
                     TrackSelectorRow(
                         label = track.label,
                         isSelected = track.isSelected,
@@ -95,7 +99,7 @@ fun TrackSelectorSheet(
                     onClick = onSubtitleDisabled
                 )
             }
-            items(subtitleTracks) { track ->
+            items(subtitleTracks, key = { "sub_${it.groupIndex}_${it.trackIndex}" }) { track ->
                 TrackSelectorRow(
                     label = track.label,
                     isSelected = track.isSelected,
@@ -142,6 +146,45 @@ fun TrackSelectorSheet(
                 }
             }
             item { Spacer(modifier = Modifier.height(32.dp)) }
+        }
+    }
+
+    if (isTv) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDismissRequest
+                    )
+            )
+            
+            androidx.compose.animation.AnimatedVisibility(
+                visible = true,
+                enter = androidx.compose.animation.slideInHorizontally(initialOffsetX = { it }),
+                exit = androidx.compose.animation.slideOutHorizontally(targetOffsetX = { it }),
+                modifier = Modifier.align(Alignment.CenterEnd)
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(340.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp
+                ) {
+                    sheetContent()
+                }
+            }
+        }
+    } else {
+        ModalBottomSheet(
+            onDismissRequest = onDismissRequest,
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            sheetContent()
         }
     }
 }

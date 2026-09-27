@@ -17,9 +17,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -70,7 +70,10 @@ fun Modifier.tvFocusable(
             isFocused = it.isFocused
             onFocusChange?.invoke(it.isFocused)
         }
-        .scale(scale)
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
         .drawWithContent {
             // 1. Önce tüm içeriği (resim, metin vb.) çiz
             drawContent()
@@ -133,14 +136,17 @@ fun TvIconButton(
     Box(
         modifier = modifier
             .size(containerSize)
-            .scale(scale)
             .onFocusChanged { isFocused = it.isFocused }
+            .focusable()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick
-            )
-            .focusable(),
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(

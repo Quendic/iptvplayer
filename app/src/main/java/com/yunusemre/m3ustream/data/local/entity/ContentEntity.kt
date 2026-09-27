@@ -1,9 +1,17 @@
 package com.yunusemre.m3ustream.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "content")
+@Entity(
+    tableName = "content",
+    indices = [
+        Index(value = ["category", "type"]),
+        Index(value = ["seriesName", "type", "seasonNumber", "episodeNumber"]),
+        Index(value = ["type"])
+    ]
+)
 data class ContentEntity(
     @PrimaryKey val id: String,  // MD5 of streamUrl
     val title: String,

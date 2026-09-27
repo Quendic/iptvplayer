@@ -104,7 +104,7 @@ fun SearchScreen(
                 contentPadding = PaddingValues(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(uiState.results) { content ->
+                items(uiState.results, key = { it.id }) { content ->
                     ContentCard(
                         title = content.title,
                         posterUrl = content.posterUrl,

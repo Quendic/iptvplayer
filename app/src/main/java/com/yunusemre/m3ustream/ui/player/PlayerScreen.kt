@@ -5,6 +5,7 @@ import android.content.pm.ActivityInfo
 import android.view.ViewGroup
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -61,6 +62,11 @@ fun PlayerScreen(
 
     var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
 
+    val isTv = remember(context) {
+        val uiModeManager = context.getSystemService(android.content.Context.UI_MODE_SERVICE) as? android.app.UiModeManager
+        uiModeManager?.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
+    }
+
     LaunchedEffect(contentId) {
         viewModel.loadContent(contentId)
     }
@@ -84,11 +90,18 @@ fun PlayerScreen(
         val mediaSourceFactory = DefaultMediaSourceFactory(context)
             .setDataSourceFactory(httpDataSourceFactory)
 
+        val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+            .setBufferDurationsMs(15_000, 30_000, 1_500, 3_000)
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+
         val renderersFactory = androidx.media3.exoplayer.DefaultRenderersFactory(context)
-            .setExtensionRendererMode(androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
+            .setExtensionRendererMode(androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+            .setEnableDecoderFallback(true)
 
         val player = ExoPlayer.Builder(context, renderersFactory)
             .setMediaSourceFactory(mediaSourceFactory)
+            .setLoadControl(loadControl)
             .build()
 
         exoPlayer = player
@@ -123,12 +136,14 @@ fun PlayerScreen(
                 player.pause()
             } else if (event == Lifecycle.Event.ON_STOP) {
                 viewModel.saveProgress(player.currentPosition, player.duration)
+                player.stop()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
 
         onDispose {
             viewModel.saveProgress(player.currentPosition, player.duration)
+            exoPlayer = null
             player.release()
             lifecycleOwner.lifecycle.removeObserver(observer)
             val uiModeManager = context.getSystemService(android.content.Context.UI_MODE_SERVICE) as? android.app.UiModeManager
@@ -205,25 +220,6 @@ fun PlayerScreen(
         }
     }
 
-    if (uiState.showTrackSelector && exoPlayer != null) {
-        TrackSelectorSheet(
-            audioTracks = uiState.audioTracks,
-            subtitleTracks = uiState.subtitleTracks,
-            onAudioTrackSelected = { group, track ->
-                viewModel.selectAudioTrack(exoPlayer!!, group, track)
-            },
-            onSubtitleTrackSelected = { group, track ->
-                viewModel.selectSubtitleTrack(exoPlayer!!, group, track)
-            },
-            onSubtitleDisabled = {
-                viewModel.disableSubtitles(exoPlayer!!)
-            },
-            subtitleSize = uiState.subtitleSize,
-            onSubtitleSizeIncrease = { viewModel.increaseSubtitleSize() },
-            onSubtitleSizeDecrease = { viewModel.decreaseSubtitleSize() },
-            onDismissRequest = { viewModel.setShowTrackSelector(false) }
-        )
-    }
 
     val rootFocusRequester = remember { FocusRequester() }
 
@@ -243,6 +239,7 @@ fun PlayerScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.Black)
             .focusRequester(rootFocusRequester)
             .focusable()
             .onKeyEvent { keyEvent ->
@@ -343,24 +340,7 @@ fun PlayerScreen(
                 false
             }
     ) {
-        GestureHandler(
-            window = activity!!.window,
-            onSingleTap = { viewModel.toggleControls() },
-            onDoubleTapLeft = {
-                exoPlayer?.let {
-                    val pos = (it.currentPosition - 10000).coerceAtLeast(0)
-                    it.seekTo(pos)
-                    viewModel.updatePlaybackState(it.isPlaying, pos, it.duration)
-                }
-            },
-            onDoubleTapRight = {
-                exoPlayer?.let {
-                    val pos = (it.currentPosition + 10000).coerceAtMost(it.duration)
-                    it.seekTo(pos)
-                    viewModel.updatePlaybackState(it.isPlaying, pos, it.duration)
-                }
-            }
-        ) {
+        val playerViewContent = @Composable {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
@@ -392,8 +372,34 @@ fun PlayerScreen(
                         view.player = exoPlayer
                     }
                     view.subtitleView?.setFixedTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, uiState.subtitleSize)
-                }
+                },
+                onRelease = { view -> view.player = null }
             )
+        }
+
+        if (isTv) {
+            playerViewContent()
+        } else {
+            GestureHandler(
+                window = activity!!.window,
+                onSingleTap = { viewModel.toggleControls() },
+                onDoubleTapLeft = {
+                    exoPlayer?.let {
+                        val pos = (it.currentPosition - 10000).coerceAtLeast(0)
+                        it.seekTo(pos)
+                        viewModel.updatePlaybackState(it.isPlaying, pos, it.duration)
+                    }
+                },
+                onDoubleTapRight = {
+                    exoPlayer?.let {
+                        val pos = (it.currentPosition + 10000).coerceAtMost(it.duration)
+                        it.seekTo(pos)
+                        viewModel.updatePlaybackState(it.isPlaying, pos, it.duration)
+                    }
+                }
+            ) {
+                playerViewContent()
+            }
         }
 
         PlayerControls(
@@ -471,6 +477,26 @@ fun PlayerScreen(
                     Text("Tekrar Dene")
                 }
             }
+        }
+        
+        if (uiState.showTrackSelector && exoPlayer != null) {
+            TrackSelectorSheet(
+                audioTracks = uiState.audioTracks,
+                subtitleTracks = uiState.subtitleTracks,
+                onAudioTrackSelected = { group, track ->
+                    viewModel.selectAudioTrack(exoPlayer!!, group, track)
+                },
+                onSubtitleTrackSelected = { group, track ->
+                    viewModel.selectSubtitleTrack(exoPlayer!!, group, track)
+                },
+                onSubtitleDisabled = {
+                    viewModel.disableSubtitles(exoPlayer!!)
+                },
+                subtitleSize = uiState.subtitleSize,
+                onSubtitleSizeIncrease = { viewModel.increaseSubtitleSize() },
+                onSubtitleSizeDecrease = { viewModel.decreaseSubtitleSize() },
+                onDismissRequest = { viewModel.setShowTrackSelector(false) }
+            )
         }
     }
 }

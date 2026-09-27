@@ -16,8 +16,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 import kotlinx.coroutines.flow.combine
+import androidx.compose.runtime.Immutable
 import com.yunusemre.m3ustream.domain.repository.WatchHistoryRepository
 
+@Immutable
 data class HomeUiState(
     val continueWatching: List<Content> = emptyList(),
     val categories: Map<String, List<Content>> = emptyMap(),

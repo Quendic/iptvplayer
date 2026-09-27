@@ -11,12 +11,7 @@ class ContentClassifier @Inject constructor() {
         val contentList = mutableListOf<ContentEntity>()
         val seriesGroupsMap = mutableMapOf<String, SeriesGroupEntity>()
 
-        // 1) S01E01 / S1 E1 / S01.E01 / S1-E1 / [S01E01]
-        val pattern1 = Regex("""^(.*?)(?:[\s._-]+|[\[(])S(\d{1,2})[\s._-]*E(\d{1,3})""", RegexOption.IGNORE_CASE)
-        // 2) 1. Sezon 2. Bölüm / 1.Sezon 2.Bolum
-        val pattern2 = Regex("""^(.*?)\s+(\d{1,2})\.\s*Sezon\s+(\d{1,3})\.\s*(?:Bölüm|Bolum)""", RegexOption.IGNORE_CASE)
-        // 3) 1x01 / 01x01
-        val pattern3 = Regex("""^(.*?)(?:[\s._-]+|[\[(])(\d{1,2})x(\d{1,3})""", RegexOption.IGNORE_CASE)
+
 
         val currentTime = System.currentTimeMillis()
 
@@ -31,9 +26,9 @@ class ContentClassifier @Inject constructor() {
             var seasonNumber: Int? = null
             var episodeNumber: Int? = null
 
-            val match1 = pattern1.find(name)
-            val match2 = pattern2.find(name)
-            val match3 = pattern3.find(name)
+            val match1 = PATTERN1.find(name)
+            val match2 = PATTERN2.find(name)
+            val match3 = PATTERN3.find(name)
 
             if (match1 != null) {
                 seriesName = match1.groupValues[1].cleanSeriesName()
@@ -112,11 +107,26 @@ class ContentClassifier @Inject constructor() {
     }
 
     private fun String.cleanSeriesName(): String {
-        return this.replace(Regex("""[-._:\[\]()]+$"""), "").trim()
+        return this.replace(CLEAN_SERIES_REGEX, "").trim()
     }
 
     private fun md5(input: String): String {
         val md = MessageDigest.getInstance("MD5")
-        return md.digest(input.toByteArray()).joinToString("") { "%02x".format(it) }
+        val bytes = md.digest(input.toByteArray())
+        val result = CharArray(bytes.size * 2)
+        bytes.forEachIndexed { i, byte ->
+            val v = byte.toInt() and 0xFF
+            result[i * 2] = HEX_CHARS[v ushr 4]
+            result[i * 2 + 1] = HEX_CHARS[v and 0x0F]
+        }
+        return String(result)
+    }
+
+    companion object {
+        private val PATTERN1 = Regex("""^(.*?)(?:[\s._-]+|[\[(])S(\d{1,2})[\s._-]*E(\d{1,3})""", RegexOption.IGNORE_CASE)
+        private val PATTERN2 = Regex("""^(.*?)\s+(\d{1,2})\.\s*Sezon\s+(\d{1,3})\.\s*(?:Bölüm|Bolum)""", RegexOption.IGNORE_CASE)
+        private val PATTERN3 = Regex("""^(.*?)(?:[\s._-]+|[\[(])(\d{1,2})x(\d{1,3})""", RegexOption.IGNORE_CASE)
+        private val CLEAN_SERIES_REGEX = Regex("""[-._:\[\]()]+$""")
+        private val HEX_CHARS = "0123456789abcdef".toCharArray()
     }
 }

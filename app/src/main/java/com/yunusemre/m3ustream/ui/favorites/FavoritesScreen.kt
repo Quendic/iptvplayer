@@ -62,7 +62,7 @@ fun FavoritesScreen(
                     .padding(horizontal = 8.dp),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
-                items(favorites) { content ->
+                items(favorites, key = { it.id }) { content ->
                     ContentCard(
                         title = content.title,
                         posterUrl = content.posterUrl,

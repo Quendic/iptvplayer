@@ -20,8 +20,10 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
+import androidx.compose.runtime.Immutable
 import javax.inject.Inject
 
+@Immutable
 data class AudioTrackInfo(
     val language: String,
     val label: String,
@@ -30,6 +32,7 @@ data class AudioTrackInfo(
     val trackIndex: Int
 )
 
+@Immutable
 data class SubtitleTrackInfo(
     val language: String,
     val label: String,
@@ -38,6 +41,7 @@ data class SubtitleTrackInfo(
     val trackIndex: Int
 )
 
+@Immutable
 data class PlayerUiState(
     val content: Content? = null,
     val nextEpisode: Content? = null,
@@ -226,9 +230,8 @@ class PlayerViewModel @Inject constructor(
         val originalLabel = format.label?.trim() ?: ""
 
         // Filter out website promotions / domains (e.g. filmbol.org, webteizle.com, etc.)
-        val webRegex = Regex("""(?i)\b([a-z0-9_\-]+\.(org|com|net|site|xyz|tv|cc|pw|me|biz|info|club|pro|vip|online|live|tv)|www\.[a-z0-9_\-]+\.[a-z]+|https?://\S+)\b""")
-        val isPurePromo = originalLabel.matches(webRegex) || originalLabel.contains(Regex("""(?i)\b(filmbol|webteizle|hdfilm|dizipal|sezonlukdizi|fullhd)\b"""))
-        val cleanedLabel = if (isPurePromo) "" else originalLabel.replace(webRegex, "").trim()
+        val isPurePromo = originalLabel.matches(WEB_REGEX) || originalLabel.contains(PROMO_REGEX)
+        val cleanedLabel = if (isPurePromo) "" else originalLabel.replace(WEB_REGEX, "").trim()
 
         val tags = mutableListOf<String>()
 
@@ -258,8 +261,8 @@ class PlayerViewModel @Inject constructor(
         // Keep meaningful descriptive labels if not promo
         if (cleanedLabel.isNotEmpty()) {
             val extra = cleanedLabel
-                .replace(Regex("""(?i)\b(forced|zorunlu|dublaj|dub|original|orijinal|türkçe|turkce|english|ingilizce)\b"""), "")
-                .replace(Regex("""[()\[\]]"""), "")
+                .replace(LANGUAGE_REGEX, "")
+                .replace(BRACKET_REGEX, "")
                 .trim()
             if (extra.isNotEmpty() && !tags.any { it.equals(extra, ignoreCase = true) }) {
                 tags.add(extra)
@@ -371,5 +374,12 @@ class PlayerViewModel @Inject constructor(
             }
             player.trackSelectionParameters = parametersBuilder.build()
         }
+    }
+
+    companion object {
+        private val WEB_REGEX = Regex("""(?i)\b([a-z0-9_\-]+\.(org|com|net|site|xyz|tv|cc|pw|me|biz|info|club|pro|vip|online|live|tv)|www\.[a-z0-9_\-]+\.[a-z]+|https?://\S+)\b""")
+        private val PROMO_REGEX = Regex("""(?i)\b(filmbol|webteizle|hdfilm|dizipal|sezonlukdizi|fullhd)\b""")
+        private val LANGUAGE_REGEX = Regex("""(?i)\b(forced|zorunlu|dublaj|dub|original|orijinal|türkçe|turkce|english|ingilizce)\b""")
+        private val BRACKET_REGEX = Regex("""[()\[\]]""")
     }
 }
