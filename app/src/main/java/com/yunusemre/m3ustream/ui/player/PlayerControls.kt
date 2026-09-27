@@ -13,6 +13,8 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -183,6 +185,11 @@ fun PlayerControls(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         // Süre Çubuğu (Kumandanın odak tuzağına düşmemesi için focus almaz, dokunmatik çalışır)
+                        val progress = if (duration > 0) (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        val uiModeManager = remember { context.getSystemService(android.content.Context.UI_MODE_SERVICE) as android.app.UiModeManager }
+                        val isTv = remember { uiModeManager.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION }
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
@@ -192,21 +199,54 @@ fun PlayerControls(
                                 color = Color.White.copy(alpha = 0.9f),
                                 style = MaterialTheme.typography.labelMedium
                             )
-                            val progress = if (duration > 0) (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f
-                            val context = androidx.compose.ui.platform.LocalContext.current
-                            val uiModeManager = remember { context.getSystemService(android.content.Context.UI_MODE_SERVICE) as android.app.UiModeManager }
-                            val isTv = remember { uiModeManager.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION }
-                            
+
                             if (isTv) {
-                                LinearProgressIndicator(
-                                    progress = { progress },
+                                BoxWithConstraints(
                                     modifier = Modifier
                                         .weight(1f)
-                                        .height(4.dp)
-                                        .padding(horizontal = 10.dp),
-                                    color = Color(0xFFE50914),
-                                    trackColor = Color.White.copy(alpha = 0.3f)
-                                )
+                                        .height(24.dp)
+                                        .padding(horizontal = 10.dp)
+                                ) {
+                                    val barWidth = maxWidth
+                                    val thumbXOffset = barWidth * progress
+
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        // Bar konteyneri
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(4.dp)
+                                                .background(Color.White.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
+                                        ) {
+                                            // Aktif dolum kısmı
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxHeight()
+                                                    .fillMaxWidth(progress)
+                                                    .background(Color(0xFFE50914), RoundedCornerShape(2.dp))
+                                            )
+                                        }
+
+                                        // Halka (Thumb) - Netflix/YouTube tarzı
+                                        Box(
+                                            modifier = Modifier
+                                                .offset(x = thumbXOffset - 8.dp) // Halkanın yarıçapı kadar sola çek
+                                                .size(16.dp)
+                                                .border(2.dp, Color(0xFFE50914), CircleShape)
+                                                .background(Color.Transparent, CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .background(Color(0xFFE50914), CircleShape)
+                                            )
+                                        }
+                                    }
+                                }
                             } else {
                                 Slider(
                                     value = currentPosition.toFloat(),
@@ -223,6 +263,7 @@ fun PlayerControls(
                                     )
                                 )
                             }
+
                             Text(
                                 text = formatTime(duration),
                                 color = Color.White.copy(alpha = 0.9f),

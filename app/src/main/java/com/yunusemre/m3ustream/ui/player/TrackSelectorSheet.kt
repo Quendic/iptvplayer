@@ -22,7 +22,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.ExperimentalComposeUiApi
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun TrackSelectorSheet(
     audioTracks: List<AudioTrackInfo>,
@@ -41,6 +47,16 @@ fun TrackSelectorSheet(
         uiModeManager?.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
     }
 
+    val panelFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        if (isTv) {
+            try {
+                panelFocusRequester.requestFocus()
+            } catch (e: Exception) {}
+        }
+    }
+
     val sheetContent = @Composable {
         LazyColumn(
             modifier = Modifier
@@ -53,7 +69,7 @@ fun TrackSelectorSheet(
                     text = "🗣️ Ses İzi",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = Color.White,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
@@ -62,21 +78,23 @@ fun TrackSelectorSheet(
                     Text(
                         text = "Ses izi bulunamadı",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = Color.Gray,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                 }
             } else {
-                items(audioTracks, key = { "audio_${it.groupIndex}_${it.trackIndex}" }) { track ->
+                items(audioTracks.size, key = { "audio_$it" }) { index ->
+                    val track = audioTracks[index]
                     TrackSelectorRow(
                         label = track.label,
                         isSelected = track.isSelected,
+                        modifier = if (index == 0) Modifier.focusRequester(panelFocusRequester) else Modifier,
                         onClick = { onAudioTrackSelected(track.groupIndex, track.trackIndex) }
                     )
                 }
                 item { 
                     Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+                    HorizontalDivider(color = Color.DarkGray)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }
@@ -87,7 +105,7 @@ fun TrackSelectorSheet(
                     text = "📝 Altyazı",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = Color.White,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
@@ -96,10 +114,12 @@ fun TrackSelectorSheet(
                 TrackSelectorRow(
                     label = "Kapalı",
                     isSelected = isOffSelected,
+                    modifier = if (audioTracks.isEmpty()) Modifier.focusRequester(panelFocusRequester) else Modifier,
                     onClick = onSubtitleDisabled
                 )
             }
-            items(subtitleTracks, key = { "sub_${it.groupIndex}_${it.trackIndex}" }) { track ->
+            items(subtitleTracks.size, key = { "sub_$it" }) { index ->
+                val track = subtitleTracks[index]
                 TrackSelectorRow(
                     label = track.label,
                     isSelected = track.isSelected,
@@ -108,14 +128,14 @@ fun TrackSelectorSheet(
             }
             item { 
                 Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+                HorizontalDivider(color = Color.DarkGray)
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
                     text = "⚙️ Altyazı Boyutu",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = Color.White,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Row(
@@ -128,7 +148,7 @@ fun TrackSelectorSheet(
                     Text(
                         text = "Yazı Tipi Boyutu: ${subtitleSize.toInt()}",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.White
                     )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -171,9 +191,13 @@ fun TrackSelectorSheet(
                 Surface(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .width(340.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 8.dp
+                        .width(360.dp)
+                        .focusProperties {
+                            exit = { FocusRequester.Cancel }
+                        }
+                        .focusGroup(),
+                    color = Color(0xEE141414), // Şeffaf koyu gri arka plan
+                    tonalElevation = 0.dp
                 ) {
                     sheetContent()
                 }
@@ -182,7 +206,7 @@ fun TrackSelectorSheet(
     } else {
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = Color(0xFF141414)
         ) {
             sheetContent()
         }
@@ -193,24 +217,26 @@ fun TrackSelectorSheet(
 private fun TrackSelectorRow(
     label: String,
     isSelected: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
     val textColor by animateColorAsState(
-        targetValue = if (isFocused || isSelected) Color(0xFFE50914) else MaterialTheme.colorScheme.onSurface,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        targetValue = if (isFocused) Color.Black else if (isSelected) Color(0xFFE50914) else Color.LightGray,
+        animationSpec = tween(durationMillis = 150),
         label = "track_text_color"
     )
     val scale by animateFloatAsState(
-        targetValue = if (isFocused) 1.025f else 1f,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        targetValue = if (isFocused) 1.05f else 1f,
+        animationSpec = tween(durationMillis = 150),
         label = "track_scale"
     )
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .padding(vertical = 4.dp)
             .scale(scale)
             .onFocusChanged { isFocused = it.isFocused }
             .clickable(
@@ -219,28 +245,28 @@ private fun TrackSelectorRow(
                 onClick = onClick
             )
             .focusable(),
-        color = if (isFocused) Color(0xFFE50914).copy(alpha = 0.14f) else if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f) else Color.Transparent,
+        color = if (isFocused) Color.White else Color.Transparent,
         shape = RoundedCornerShape(8.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp, horizontal = 12.dp),
+                .padding(vertical = 12.dp, horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             RadioButton(
                 selected = isSelected,
                 onClick = null,
                 colors = RadioButtonDefaults.colors(
-                    selectedColor = Color(0xFFE50914),
-                    unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    selectedColor = if (isFocused) Color.Black else Color(0xFFE50914),
+                    unselectedColor = if (isFocused) Color.DarkGray else Color.Gray
                 )
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isSelected || isFocused) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (isSelected || isFocused) FontWeight.Bold else FontWeight.Medium,
                 color = textColor
             )
         }
@@ -255,13 +281,13 @@ private fun TvSizeButton(
     var isFocused by remember { mutableStateOf(false) }
 
     val contentColor by animateColorAsState(
-        targetValue = if (isFocused) Color(0xFFE50914) else MaterialTheme.colorScheme.onSurface,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        targetValue = if (isFocused) Color.Black else Color.White,
+        animationSpec = tween(durationMillis = 150),
         label = "size_btn_color"
     )
     val scale by animateFloatAsState(
         targetValue = if (isFocused) 1.15f else 1f,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 150),
         label = "size_btn_scale"
     )
 
@@ -276,7 +302,7 @@ private fun TvSizeButton(
                 onClick = onClick
             )
             .focusable(),
-        color = if (isFocused) Color(0xFFE50914).copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
+        color = if (isFocused) Color.White else Color.DarkGray,
         shape = RoundedCornerShape(8.dp)
     ) {
         Box(

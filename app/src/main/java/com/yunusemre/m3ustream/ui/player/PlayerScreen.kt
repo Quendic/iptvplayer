@@ -108,17 +108,34 @@ fun PlayerScreen(
         
         viewModel.applyTrackPreferences(player)
 
+        var hasSeeked = false
+
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                viewModel.updatePlaybackState(isPlaying, player.currentPosition, player.duration)
+                if (hasSeeked || viewModel.uiState.value.currentPosition == 0L) {
+                    viewModel.updatePlaybackState(isPlaying, player.currentPosition, player.duration)
+                }
             }
             override fun onPlaybackStateChanged(playbackState: Int) {
                 val isBuffering = playbackState == Player.STATE_BUFFERING
                 viewModel.setLoading(isBuffering)
-                viewModel.updatePlaybackState(player.isPlaying, player.currentPosition, player.duration)
+                
                 if (playbackState == Player.STATE_READY) {
+                    val targetPos = viewModel.uiState.value.currentPosition
+                    if (!hasSeeked && targetPos > 0) {
+                        player.seekTo(targetPos)
+                        hasSeeked = true
+                    } else {
+                        hasSeeked = true
+                    }
+                    viewModel.updatePlaybackState(player.isPlaying, player.currentPosition, player.duration)
                     viewModel.loadTracks(player)
                     viewModel.setError(null)
+                } else {
+                    // Do not overwrite UI state position with 0 while buffering initially
+                    if (hasSeeked || viewModel.uiState.value.currentPosition == 0L) {
+                        viewModel.updatePlaybackState(player.isPlaying, player.currentPosition, player.duration)
+                    }
                 }
             }
             override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
@@ -187,9 +204,7 @@ fun PlayerScreen(
             if (currentUri != url) {
                 val mediaItem = MediaItem.fromUri(url)
                 player.setMediaItem(mediaItem)
-                if (uiState.currentPosition > 0) {
-                    player.seekTo(uiState.currentPosition)
-                }
+                // The position seek will be handled by Player.Listener when STATE_READY is reached
                 player.prepare()
                 player.play()
             }
