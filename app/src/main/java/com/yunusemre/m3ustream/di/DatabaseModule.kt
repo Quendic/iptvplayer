@@ -38,4 +38,7 @@ object DatabaseModule {
 
     @Provides
     fun provideFavoriteDao(database: AppDatabase): FavoriteDao = database.favoriteDao()
+
+    @Provides
+    fun provideDownloadDao(database: AppDatabase): com.yunusemre.m3ustream.data.local.dao.DownloadDao = database.downloadDao()
 }

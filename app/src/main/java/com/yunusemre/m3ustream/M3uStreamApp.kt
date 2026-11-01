@@ -13,6 +13,7 @@ import okio.Path.Companion.toOkioPath
 
 @HiltAndroidApp
 class M3uStreamApp : Application(), SingletonImageLoader.Factory {
+
     override fun newImageLoader(context: PlatformContext): ImageLoader {
         return ImageLoader.Builder(context)
             .memoryCache {

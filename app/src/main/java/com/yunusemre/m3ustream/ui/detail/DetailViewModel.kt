@@ -21,11 +21,21 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.Immutable
 import javax.inject.Inject
 
+import com.yunusemre.m3ustream.data.local.entity.DownloadEntity
+import com.yunusemre.m3ustream.data.local.entity.DownloadState
+import com.yunusemre.m3ustream.domain.repository.DownloadRepository
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Context
+
 @Immutable
 data class MovieDetailState(
     val content: Content? = null,
     val progress: WatchProgress? = null,
     val isFavorite: Boolean = false,
+    val downloadEntity: DownloadEntity? = null,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -45,7 +55,9 @@ class DetailViewModel @Inject constructor(
     private val contentRepository: ContentRepository,
     private val watchHistoryRepository: WatchHistoryRepository,
     private val favoriteRepository: FavoriteRepository,
-    private val getSeriesDetailUseCase: GetSeriesDetailUseCase
+    private val downloadRepository: DownloadRepository,
+    private val getSeriesDetailUseCase: GetSeriesDetailUseCase,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val _movieState = MutableStateFlow(MovieDetailState())
     val movieState: StateFlow<MovieDetailState> = _movieState.asStateFlow()
@@ -63,9 +75,39 @@ class DetailViewModel @Inject constructor(
                 _movieState.update {
                     it.copy(content = content, progress = progress, isFavorite = isFav, isLoading = false)
                 }
+
+                // Download durumunu dinle
+                downloadRepository.getDownloadFlow(contentId).collect { download ->
+                    _movieState.update { it.copy(downloadEntity = download) }
+                }
             } else {
                 _movieState.update { it.copy(isLoading = false, error = "Film bulunamadı") }
             }
+        }
+    }
+
+    fun startDownload(content: Content) {
+        viewModelScope.launch {
+            val download = DownloadEntity(
+                contentId = content.id,
+                title = content.title,
+                type = content.type.name,
+                streamUrl = content.streamUrl,
+                logoUrl = content.posterUrl,
+                state = DownloadState.QUEUED.name
+            )
+            downloadRepository.addOrUpdateDownload(download)
+
+            val workRequest = OneTimeWorkRequestBuilder<com.yunusemre.m3ustream.worker.VideoDownloadWorker>()
+                .setInputData(
+                    workDataOf(
+                        com.yunusemre.m3ustream.worker.VideoDownloadWorker.KEY_CONTENT_ID to content.id,
+                        com.yunusemre.m3ustream.worker.VideoDownloadWorker.KEY_STREAM_URL to content.streamUrl
+                    )
+                )
+                .build()
+
+            WorkManager.getInstance(context).enqueue(workRequest)
         }
     }
 

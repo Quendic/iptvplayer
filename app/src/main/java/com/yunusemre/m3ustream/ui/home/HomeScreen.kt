@@ -213,7 +213,7 @@ fun HomeScreen(
 
                                         // Close icon to remove from history
                                         androidx.compose.material3.IconButton(
-                                            onClick = { viewModel.removeFromHistory(content.id) },
+                                            onClick = { viewModel.removeFromHistory(content) },
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
                                                 .size(24.dp)

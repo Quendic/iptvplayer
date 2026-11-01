@@ -87,8 +87,10 @@ fun PlayerScreen(
             .setReadTimeoutMs(15000)
             .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)") // Daha genel bir tarayıcı user-agent'ı
 
+        val dataSourceFactory = androidx.media3.datasource.DefaultDataSource.Factory(context, httpDataSourceFactory)
+
         val mediaSourceFactory = DefaultMediaSourceFactory(context)
-            .setDataSourceFactory(httpDataSourceFactory)
+            .setDataSourceFactory(dataSourceFactory)
 
         val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
             .setBufferDurationsMs(15_000, 30_000, 1_500, 3_000)
@@ -196,13 +198,17 @@ fun PlayerScreen(
         }
     }
 
-    LaunchedEffect(uiState.content?.streamUrl, exoPlayer) {
-        val url = uiState.content?.streamUrl
+    LaunchedEffect(uiState.playbackUri, exoPlayer) {
+        val uriString = uiState.playbackUri
         val player = exoPlayer
-        if (url != null && player != null) {
+        if (uriString != null && player != null) {
             val currentUri = player.currentMediaItem?.localConfiguration?.uri?.toString()
-            if (currentUri != url) {
-                val mediaItem = MediaItem.fromUri(url)
+            if (currentUri != uriString) {
+                val mediaItem = if (uiState.isOffline) {
+                    MediaItem.fromUri(android.net.Uri.fromFile(java.io.File(uriString)))
+                } else {
+                    MediaItem.fromUri(uriString)
+                }
                 player.setMediaItem(mediaItem)
                 // The position seek will be handled by Player.Listener when STATE_READY is reached
                 player.prepare()

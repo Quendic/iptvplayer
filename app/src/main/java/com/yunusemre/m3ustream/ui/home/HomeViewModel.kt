@@ -106,6 +106,16 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun removeFromHistory(content: Content) {
+        viewModelScope.launch {
+            if (content.type == ContentType.SERIES && !content.seriesName.isNullOrBlank()) {
+                watchHistoryRepository.deleteHistoryBySeries(content.seriesName)
+            } else {
+                watchHistoryRepository.deleteHistory(content.id)
+            }
+        }
+    }
+
     fun removeFromHistory(contentId: String) {
         viewModelScope.launch {
             watchHistoryRepository.deleteHistory(contentId)

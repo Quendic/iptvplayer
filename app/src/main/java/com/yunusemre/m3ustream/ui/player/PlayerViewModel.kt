@@ -44,6 +44,8 @@ data class SubtitleTrackInfo(
 @Immutable
 data class PlayerUiState(
     val content: Content? = null,
+    val playbackUri: String? = null,
+    val isOffline: Boolean = false,
     val nextEpisode: Content? = null,
     val isPlaying: Boolean = false,
     val currentPosition: Long = 0,
@@ -63,6 +65,7 @@ data class PlayerUiState(
 class PlayerViewModel @Inject constructor(
     private val contentRepository: ContentRepository,
     private val watchHistoryRepository: WatchHistoryRepository,
+    private val downloadRepository: com.yunusemre.m3ustream.domain.repository.DownloadRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PlayerUiState())
@@ -75,7 +78,22 @@ class PlayerViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
             val content = contentRepository.getContentById(contentId).firstOrNull()
             if (content != null) {
-                _uiState.update { it.copy(content = content, isLoading = false) }
+                // Check if locally downloaded
+                val download = downloadRepository.getDownload(contentId)
+                val isDownloaded = download?.state == com.yunusemre.m3ustream.data.local.entity.DownloadState.COMPLETED.name
+                        && !download.localFilePath.isNullOrEmpty() 
+                        && java.io.File(download.localFilePath).exists()
+
+                val finalPlaybackUri = if (isDownloaded) download!!.localFilePath!! else content.streamUrl
+
+                _uiState.update { 
+                    it.copy(
+                        content = content, 
+                        playbackUri = finalPlaybackUri,
+                        isOffline = isDownloaded,
+                        isLoading = false
+                    ) 
+                }
                 val progress = watchHistoryRepository.getWatchProgress(contentId).firstOrNull()
                 if (progress != null) {
                     _uiState.update { it.copy(currentPosition = progress.lastPosition) }

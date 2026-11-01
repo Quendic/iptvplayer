@@ -10,4 +10,5 @@ interface WatchHistoryRepository {
     suspend fun saveProgress(contentId: String, position: Long, duration: Long)
     suspend fun markCompleted(contentId: String)
     suspend fun deleteHistory(contentId: String)
+    suspend fun deleteHistoryBySeries(seriesName: String)
 }

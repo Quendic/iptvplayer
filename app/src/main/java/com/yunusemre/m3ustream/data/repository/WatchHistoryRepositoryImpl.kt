@@ -56,6 +56,10 @@ class WatchHistoryRepositoryImpl @Inject constructor(
         watchHistoryDao.delete(contentId)
     }
 
+    override suspend fun deleteHistoryBySeries(seriesName: String) = withContext(Dispatchers.IO) {
+        watchHistoryDao.deleteHistoryBySeriesName(seriesName)
+    }
+
     private fun WatchHistoryEntity.toDomain(): WatchProgress = WatchProgress(
         contentId = contentId,
         lastPosition = lastPosition,

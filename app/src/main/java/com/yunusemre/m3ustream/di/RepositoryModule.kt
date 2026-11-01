@@ -41,4 +41,10 @@ abstract class RepositoryModule {
     abstract fun bindFavoriteRepository(
         impl: FavoriteRepositoryImpl
     ): FavoriteRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDownloadRepository(
+        impl: com.yunusemre.m3ustream.data.repository.DownloadRepositoryImpl
+    ): com.yunusemre.m3ustream.domain.repository.DownloadRepository
 }

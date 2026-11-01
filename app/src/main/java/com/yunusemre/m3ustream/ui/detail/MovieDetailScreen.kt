@@ -23,6 +23,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Check
 import com.yunusemre.m3ustream.ui.components.TvIconButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -211,6 +213,83 @@ fun MovieDetailScreen(
                             fontWeight = FontWeight.Bold,
                             color = favColor
                         )
+                    }
+                }
+
+                Spacer(modifier = Modifier.size(16.dp))
+
+                // İNDİR BUTONU (Netflix Tarzı)
+                var isDownloadFocused by remember { mutableStateOf(false) }
+                val downloadScale by animateFloatAsState(
+                    targetValue = if (isDownloadFocused) 1.05f else 1f,
+                    animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+                    label = "download_scale"
+                )
+
+                val download = state.downloadEntity
+                val isDownloading = download?.state == com.yunusemre.m3ustream.data.local.entity.DownloadState.DOWNLOADING.name
+                val isCompleted = download?.state == com.yunusemre.m3ustream.data.local.entity.DownloadState.COMPLETED.name
+
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .graphicsLayer {
+                            scaleX = downloadScale
+                            scaleY = downloadScale
+                        }
+                        .onFocusChanged { isDownloadFocused = it.isFocused }
+                        .clickable { 
+                            if (!isDownloading && !isCompleted) {
+                                viewModel.startDownload(content)
+                            }
+                        }
+                        .focusable(),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    shape = ButtonDefaults.shape
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (isDownloading) {
+                            CircularProgressIndicator(
+                                progress = { (download?.progress ?: 0f) / 100f },
+                                modifier = Modifier.size(20.dp),
+                                color = Color(0xFFE50914),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text(
+                                text = "%${download?.progress?.toInt() ?: 0}",
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFE50914)
+                            )
+                        } else if (isCompleted) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = "İndirildi",
+                                tint = Color(0xFF4CAF50)
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text(
+                                text = "İndirildi",
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF4CAF50)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.Download,
+                                contentDescription = "İndir",
+                                tint = if (isDownloadFocused) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text(
+                                text = "İndir",
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDownloadFocused) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }

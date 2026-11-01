@@ -11,7 +11,7 @@ interface WatchHistoryDao {
     @Query("SELECT * FROM watch_history WHERE contentId = :contentId")
     fun getWatchHistory(contentId: String): Flow<WatchHistoryEntity?>
 
-    @Query("SELECT * FROM watch_history ORDER BY lastWatchedAt DESC LIMIT 20")
+    @Query("SELECT * FROM watch_history ORDER BY lastWatchedAt DESC LIMIT 50")
     fun getContinueWatching(): Flow<List<WatchHistoryEntity>>
 
     @Query("SELECT * FROM watch_history ORDER BY lastWatchedAt DESC")
@@ -22,4 +22,7 @@ interface WatchHistoryDao {
 
     @Query("DELETE FROM watch_history WHERE contentId = :contentId")
     suspend fun delete(contentId: String)
+
+    @Query("DELETE FROM watch_history WHERE contentId IN (SELECT id FROM content WHERE seriesName = :seriesName)")
+    suspend fun deleteHistoryBySeriesName(seriesName: String)
 }

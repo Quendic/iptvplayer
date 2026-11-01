@@ -16,7 +16,22 @@ IPTV Player, **Android TV** ve **Mobil** cihazlar için özel olarak tasarlanmı
 
 ## 🚀 Sürüm Notları ve Güncellemeler (Changelog)
 
-### v0.3 - OTA ve TV Performans Güncellemesi (Güncel Sürüm)
+### v0.6 - Akıllı Dizi Tekilleştirme & İzleme Geçmişi İyileştirmesi (Güncel Sürüm)
+* **[YENİ] Akıllı Dizi Tekilleştirme:** Aynı diziye ait birden fazla bölüm izlendiğinde "Son İzlediklerim" listesinde yan yana yığılması engellendi. Her dizi için yalnızca en son izlenen bölüm gösterilir.
+* **[GELİŞTİRME] Genişletilmiş Geçmiş Havuzu:** İzleme geçmişi sorgu limiti 50'ye çıkarılarak çok bölümlü dizi izlemelerinde diğer içeriklerin kaybolması önlendi.
+* **[GELİŞTİRME] Akıllı Geçmişten Kaldırma:** Dizi kartı üzerindeki X butonuna basıldığında o dizinin tüm geçmiş bölümleri temizlenir, eski bölümlerin tekrar öne çıkması engellenir.
+* **[GELİŞTİRME] İndirme & Çevrimdışı İzleme Altyapısı (Test):** Bölümleri yerel hafızaya kaydedip internetsiz oynatma için Room DB ve WorkManager altyapısı hazırlandı.
+
+### v0.5 - Birleşik Oynatıcı & Mobil Dokunmatik İlerleme Çubuğu
+* **[GELİŞTİRME] Birleşik Oynatıcı Tasarımı:** TV ve Mobil sürümlerdeki oynatıcı ilerleme çubuğu Netflix tarzı kırmızı halkalı ince tasarıma kavuşturuldu.
+* **[GELİŞTİRME] Dokunmatik Jestler:** Mobil ekranda ilerleme çubuğuna dokunarak ve sürükleyerek saniye atlama desteği eklendi.
+* **[HATA ÇÖZÜMÜ] Yavaş Yüklenen HLS Akışları:** Yavaş bağlantılarda kaydedilen izleme dakikasının sıfırlanmasını önleyen gecikmeli seek mantığı devreye alındı.
+
+### v0.4 - Oynatıcı UI & Kumanda Odak İyileştirmesi
+* TV kumandası için ses ve altyazı menüsünde odak tuzağı (Focus Trap) ve doğrudan ilk öğeye odaklanma sağlandı.
+* Süre göstergeleri ilerleme çubuğunun sağına ve soluna taşındı.
+
+### v0.3 - OTA ve TV Performans Güncellemesi
 * **[YENİ] GitHub OTA Entegrasyonu:** Uygulama artık açılışta `Quendic/iptvplayer` reposunu kontrol ederek otomatik güncelleme uyarısı veriyor ve APK kurulumunu doğrudan kendi içinden yapıyor.
 * **[GELİŞTİRME] Saf Siyah Oynatıcı:** Film ve dizilerde alt/üstte kalan boşlukların ekran paneline tam uyum sağlaması için arka plan rengi saf siyaha (OLED Black) çevrildi.
 * **[OPTİMİZASYON] Düşük Donanım TV İyileştirmeleri:** 
